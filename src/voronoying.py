@@ -340,7 +340,6 @@ def main():
                         if startVertex != -1 and endVertex != -1:
                             if(e.is_linear == True):
                                 array = arcpy.Array([arcpy.Point(startVertex.X, startVertex.Y),arcpy.Point(endVertex.X, endVertex.Y)])
-                            
                             else:
                                 try:
                                     points = pv.DiscretizeCurvedEdge(cell.edges[i], max_distance, 1/ factor)
@@ -389,30 +388,45 @@ def main():
             arcpy.AddField_management(outpolygons, 'INPUT_ID', "LONG")
             fields = ['CELL_ID', 'CONTAINS_POINT', 'CONTAINS_SEGMENT', 'SHAPE@', 'SITE', 'SOURCE_CATEGORY', 'INPUT_TYPE', 'INPUT_ID']
             cursor = arcpy.da.InsertCursor(outpolygons, fields)
+
             for cIndex in range(len(cells)):
                 cell = cells[cIndex]
-                if cell.is_open == False:
+                if not cell.is_open and not cell.is_degenerate:
                     if (cIndex % 5000 == 0 and cIndex > 0):
                         arcpy.AddMessage("Cell Index: {0}".format(cIndex))
-                    pointArray = arcpy.Array()
-                    # lastIndex = None
-                    for vIndex in cell.vertices:
-                        # if lastIndex is None or vIndex != lastIndex:
-                        print(f'Cell Vertex: {vertices[vIndex].X}, {vertices[vIndex].Y}')
-                        pointArray.add(arcpy.Point(
-                            vertices[vIndex].X,
-                            vertices[vIndex].Y
-                        ))
-                        # lastIndex = vIndex
-                    input_type = None
-                    input_id = None
+
+                    array = arcpy.Array()
+                    for i in range(len(cell.edges)):
+                        e = edges[cell.edges[i]]
+                        startVertex = vertices[e.start]
+                        endVertex = vertices[e.end]
+                        max_distance  = Distance([startVertex.X, startVertex.Y], [endVertex.X, endVertex.Y]) / 10
+
+                        if e.is_linear:
+                            array.add(arcpy.Point(startVertex.X, startVertex.Y))
+                            array.add(arcpy.Point(endVertex.X, endVertex.Y))
+
+                        else:
+                            try:
+                                points = pv.DiscretizeCurvedEdge(cell.edges[i], max_distance, 1 / factor)
+                                for p in points:
+                                    array.append(arcpy.Point(p[0], p[1]))
+                            except pyvoronoi.FocusOnDirectixException:
+                                arcpy.AddMessage(
+                                    "FocusOnDirectixException at: {5}. The drawing has been defaulted from a curved line to a straight line. Length {0} - From: {1}, {2} To: {3}, {4}".format(
+                                        max_distance, startVertex.X,
+                                        startVertex.Y, endVertex.X,
+                                        endVertex.Y, cell.edges[i]))
+                                array.add(arcpy.Point(startVertex.X, startVertex.Y))
+                                array.add(arcpy.Point(endVertex.X, endVertex.Y))
+
                     if cell.site >= len(pointOIDs):
                         input_type = "LINE"
                         input_id = lineIds[cell.site - len(pointOIDs)]
                     else:
                         input_type = "POINT"
                         input_id = pointOIDs[cell.site]
-                    polygon = arcpy.Polygon(pointArray)
+                    polygon = arcpy.Polygon(array)
                     cursor.insertRow((cell.cell_identifier, cell.contains_point, cell.contains_segment, polygon, cell.site,
                                       cell.source_category, input_type, input_id))
             del cursor
