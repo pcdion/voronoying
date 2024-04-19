@@ -157,8 +157,10 @@ def main():
         ##################################################################################
         #HARD CODED PARAMETERS
         ##################################################################################
-        if arcpy.env.scratchWorkspace is None:
-            arcpy.env.scratchWorkspace = r'C:\Users\fancelin\OneDrive - Esri Canada\Documents\ArcGIS\Projects\pyvoronoi-tests\pyvoronoi-tests.gdb'
+        # if arcpy.env.scratchWorkspace is None:
+        arcpy.env.scratchWorkspace = outWorkspace
+
+
         factor = 100
         inroads_split_name = "voronoying_lines_split"
         inroads_split_line_name = "voronoying_lines_split_lines"
