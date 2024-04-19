@@ -150,9 +150,8 @@ def main():
         inlines = arcpy.GetParameterAsText(1)
         outWorkspace = arcpy.GetParameterAsText(2)
         outpoints = arcpy.GetParameterAsText(3)
-        outsegments = arcpy.GetParameterAsText(4)
-        outpolygons = arcpy.GetParameterAsText(5)
-        inroads_identifier = arcpy.GetParameterAsText(6)
+        outpolygons = arcpy.GetParameterAsText(4)
+        inroads_identifier = arcpy.GetParameterAsText(5)
         arcpy.env.workspace = outWorkspace
 
         ##################################################################################
@@ -174,10 +173,6 @@ def main():
         #Validate license requirements
         validateLicense()
 
-        #Validate lines are provided
-        if len(outsegments) == 0:
-            raise Exception("Input lines were not provided.")
-
         #Validate that a line identifier was provided
         if len(inroads_identifier) == 0:
             raise Exception("Input lines identifer was not provided.")
@@ -196,7 +191,6 @@ def main():
             inroads_split,
             inroads_split_line,
             "{0}{1}{2}".format(outWorkspace, os.path.sep, outpoints),
-            "{0}{1}{2}".format(outWorkspace,os.path.sep,outsegments),
             "{0}{1}{2}".format(outWorkspace,os.path.sep,outpolygons)]:
             delFCByPath(fc)
 
@@ -285,9 +279,6 @@ def main():
                         ]
                     ])
 
-
-		
-
         arcpy.AddMessage("Construct voronoi")
         pv.Construct()
         cells = pv.GetCells()
@@ -305,75 +296,6 @@ def main():
             with arcpy.da.InsertCursor(outpoints, fields) as cursor:
                 for vIndex, v in enumerate(vertices):
                     cursor.insertRow([vIndex, v.X, v.Y])
-		
-		
-        arcpy.AddMessage("Construct output segment feature class")
-        if len(outsegments) > 0:
-            arcpy.CreateFeatureclass_management(outWorkspace, outsegments, 'POLYLINE', spatial_reference=spatial_reference)
-            arcpy.AddField_management(outsegments, 'EdgeIndex', "LONG")
-            arcpy.AddField_management(outsegments, 'Start', "LONG")
-            arcpy.AddField_management(outsegments, 'End', "LONG")
-            arcpy.AddField_management(outsegments, 'IsLinear', "SHORT")
-            arcpy.AddField_management(outsegments, 'IsPrimary', "SHORT")
-            arcpy.AddField_management(outsegments, 'Cell', "LONG")
-            arcpy.AddField_management(outsegments, 'Twin', "LONG")
-            arcpy.AddField_management(outsegments, 'FROM_X', "DOUBLE")
-            arcpy.AddField_management(outsegments, 'FROM_Y', "DOUBLE")
-            arcpy.AddField_management(outsegments, 'TO_X', "DOUBLE")
-            arcpy.AddField_management(outsegments, 'TO_Y', "DOUBLE")
-
-            fields = ['EdgeIndex', 'Start', 'End', 'IsLinear', 'IsPrimary','Cell','Twin', 'FROM_X', 'FROM_Y', 'TO_X', 'TO_Y','SHAPE@']
-            with arcpy.da.InsertCursor(outsegments, fields) as cursor:
-                for cIndex in range(len(cells)):
-                    cell = cells[cIndex]
-                    if not cell.is_open:
-                        if (cIndex % 5000 == 0 and cIndex > 0):
-                            arcpy.AddMessage("Cell Index: {0}".format(cIndex))
-
-                        for i in range(len(cell.edges)):
-                            e = edges[cell.edges[i]]
-                            startVertex = vertices[e.start]
-                            endVertex = vertices[e.end]
-                            max_distance  = Distance([startVertex.X, startVertex.Y], [endVertex.X, endVertex.Y]) / 10
-                            array = arcpy.Array()
-                            if startVertex != -1 and endVertex != -1:
-                                if(e.is_linear == True):
-                                    array = arcpy.Array([arcpy.Point(startVertex.X, startVertex.Y),arcpy.Point(endVertex.X, endVertex.Y)])
-                                else:
-                                    try:
-                                        points = pv.DiscretizeCurvedEdge(cell.edges[i], max_distance, 1/ factor)
-                                        for p in points:
-                                            array.append(arcpy.Point(p[0], p[1]))
-                                    except pyvoronoi.FocusOnDirectixException:
-                                        arcpy.AddMessage(
-                                            "FocusOnDirectixException at: {5}. The drawing has been defaulted from a curved line to a straight line. Length {0} - From: {1}, {2} To: {3}, {4}".format(max_distance, startVertex.X,
-                                                                                       startVertex.Y, endVertex.X,
-                                                                                       endVertex.Y, cell.edges[i]))
-                                        array = arcpy.Array([arcpy.Point(startVertex.X, startVertex.Y), arcpy.Point(endVertex.X, endVertex.Y)])
-
-                                    except pyvoronoi.UnsolvableParabolaEquation:
-                                        edge = pv.outputEdges[cell.edges[i]]
-                                        sites = pv.ReturnCurvedSiteInformation(edge)
-                                        pointSite = sites[0]
-                                        segmentSite = sites[1]
-                                        edgeStartVertex = pv.outputVertices[edge.start]
-                                        edgeEndVertex = pv.outputVertices[edge.end]
-
-
-                                        print ("Input Point: {0}".format(pointSite))
-                                        print ("Input Segment: {0}".format(segmentSite))
-                                        print ("Parabola Start: {0}".format([edgeStartVertex.X, edgeStartVertex.Y]))
-                                        print ("Parabola End: {0}".format([edgeEndVertex.X, edgeEndVertex.Y]))
-                                        print ("Distance: {0}".format(max_distance))
-
-                                        arcpy.AddMessage(
-                                            "UnsolvableParabolaEquation exception at: {5}. The drawing has been defaulted from a curved line to a straight line. Length {0} - From: {1}, {2} To: {3}, {4}".format(max_distance, startVertex.X,
-                                                                                       startVertex.Y, endVertex.X,
-                                                                                   endVertex.Y, cell.edges[i]))
-                                        array = arcpy.Array([arcpy.Point(startVertex.X, startVertex.Y), arcpy.Point(endVertex.X, endVertex.Y)])
-
-                                polyline = arcpy.Polyline(array)
-                                cursor.insertRow((cell.edges[i],e.start,e.end, e.is_linear, e.is_primary,e.cell, e.twin, startVertex.X, startVertex.Y, endVertex.X, endVertex.Y, polyline))
 
         arcpy.AddMessage("Construct output cells feature class")
         if len(outpolygons) > 0:
@@ -387,8 +309,7 @@ def main():
             arcpy.AddField_management(outpolygons, 'INPUT_ID', "LONG")
             fields = ['CELL_ID', 'CONTAINS_POINT', 'CONTAINS_SEGMENT', 'SHAPE@', 'SITE', 'SOURCE_CATEGORY', 'INPUT_TYPE', 'INPUT_ID']
             with arcpy.da.InsertCursor(outpolygons, fields) as cursor:
-                for cIndex in range(len(cells)):
-                    cell = cells[cIndex]
+                for cIndex, cell in enumerate(cells):
                     if not cell.is_open and not cell.is_degenerate:
                         if (cIndex % 5000 == 0 and cIndex > 0):
                             arcpy.AddMessage("Cell Index: {0}".format(cIndex))
