@@ -37,6 +37,7 @@ Input lines must follow the different constraints:
 
  - Segments cannot be smaller than 1 divided by the default factor (see above).
  - Segments must intersect each other at nodes. They should not cross or overlap. Use [ArcGIS Pro's topology](https://pro.arcgis.com/en/pro-app/latest/help/editing/geodatabase-topology.htm) features to check your input data.
+ - Segments endpoint must be properly snapped together. Make sure the input data is correctly snapped.
 
  ### What happens if the data is incorrect?
 
