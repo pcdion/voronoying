@@ -10,6 +10,13 @@ This tool relies on two project:
 
 The geoprocessing contains information about its parameters in its built-in documentation.
 
+## Setup
+
+ - In your start menu, open your python environment from ArcGIS --> Python Command Prompt
+ - Run the command `python.exe -m pip install pyvoronoi`
+
+This will install the pyvoronoi library needed for the geoprocessing tool to run.
+
 ## Data consideration
 
 ### Resolution
