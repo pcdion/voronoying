@@ -2,7 +2,7 @@
 
 ## Description
 
-This tool contains a Voronoi tool for ArcGIS Pro. It generates Voronoi cells from point and line inputs. Ublike ArcGIS Pro out-of-the box [Thiessen Polygons Tool](https://pro.arcgis.com/en/pro-app/latest/tool-reference/analysis/create-thiessen-polygons.htm) it can generate cells from more than just point.
+This tool contains a Voronoi tool for ArcGIS Pro. It generates Voronoi cells from point and line inputs. Unlike ArcGIS Pro out-of-the box [Thiessen Polygons Tool](https://pro.arcgis.com/en/pro-app/latest/tool-reference/analysis/create-thiessen-polygons.htm) it can generate cells from more than just point.
 
 This tool relies on two project:
  - The [pyvoronoi](https://pypi.org/project/pyvoronoi) module provides a python wrapper for the Boost API in Python.
