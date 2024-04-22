@@ -10,6 +10,10 @@ This tool relies on two project:
 
 The geoprocessing contains information about its parameters in its built-in documentation.
 
+Here is a screeenshot of what the output look like. Black segments and points are the voronoi input geometries while the cells and cell's vertices are represented in blue.:
+
+![Voronoi Problem](/resources/VoronoiResults.png "Voronoi Problem")
+
 ## Setup
 
  - In your start menu, open your python environment from ArcGIS --> Python Command Prompt
