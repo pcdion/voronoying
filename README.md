@@ -1,4 +1,4 @@
-# Voronoying (Python)
+# Voronoying
 
 ## Description
 
