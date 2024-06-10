@@ -167,6 +167,8 @@ def main():
         inroads_split = "{0}{1}{2}".format(arcpy.env.scratchWorkspace, os.path.sep, inroads_split_name)
         inroads_split_line = "{0}{1}{2}".format(arcpy.env.scratchWorkspace, os.path.sep, inroads_split_line_name)
         spatial_reference = arcpy.Describe(inlines).spatialReference
+        minimum_length = 1/factor
+
 
         ##################################################################################
         #VALIDATION
@@ -267,18 +269,23 @@ def main():
         arcpy.AddMessage("Add lines to voronoi")
         lineIds = []		
         for road in arcpy.da.SearchCursor(inroads_split_line, ['SHAPE@', 'OID@', 'SHAPE@LENGTH', inroads_identifier]):
-            if (road[2] > 0):
+            
+            
+            
+            if road[2]< minimum_length:
+                arcpy.AddWarning(f"Warning: Segment {road[1]} is smaller than minimum length")
+            else :
                 lineIds.append(road[3])
                 pv.AddSegment(
                     [
-                        [
-                            road[0].firstPoint.X,
-                            road[0].firstPoint.Y
-                        ],
-                        [
-                            road[0].lastPoint.X,
-                            road[0].lastPoint.Y
-                        ]
+                    [
+                        road[0].firstPoint.X,
+                        road[0].firstPoint.Y
+                    ],
+                    [
+                        road[0].lastPoint.X,
+                        road[0].lastPoint.Y
+                    ]
                     ])
 
         arcpy.AddMessage("Construct voronoi")
