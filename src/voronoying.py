@@ -152,6 +152,7 @@ def main():
         outpoints = arcpy.GetParameterAsText(3)
         outpolygons = arcpy.GetParameterAsText(4)
         inroads_identifier = arcpy.GetParameterAsText(5)
+        multiplier = int(arcpy.GetParameterAsText(6))   #New Parameter for the multiplier
         arcpy.env.workspace = outWorkspace
 
         ##################################################################################
@@ -161,7 +162,7 @@ def main():
         arcpy.env.scratchWorkspace = outWorkspace
 
 
-        factor = 100
+        factor = 1/multiplier  #Use the selected multiplier
         inroads_split_name = "voronoying_lines_split"
         inroads_split_line_name = "voronoying_lines_split_lines"
         inroads_split = "{0}{1}{2}".format(arcpy.env.scratchWorkspace, os.path.sep, inroads_split_name)
