@@ -289,11 +289,26 @@ def main():
                     ]
                     ])
 
+        arcpy.AddMessage('Data validation')
+        degenerate_segments = pv.GetDegenerateSegments()
+        intersecting_segments = pv.GetIntersectingSegments()
+        points_on_segments = pv.GetPointsOnSegments()
+        arcpy.AddMessage(f'Detected {len(degenerate_segments)} degenerate segments')
+        arcpy.AddMessage(f'Detected {len(intersecting_segments)} intersecting segments')
+        arcpy.AddMessage(f'Detected {len(points_on_segments)} points on segments')
+
+        for s_index in intersecting_segments:
+            s = pv.GetSegment(s_index)
+            arcpy.AddMessage(f'Intersecting segment at {s_index} - {s}  -Line Id = {lineIds[s_index]}')
+
+        # if len(degenerate_segments) > 0 or len(intersecting_segments) > 0 or len(points_on_segments):
+        #     raise Exception('Detected invalid input geometries... Aborting.')
+
         arcpy.AddMessage("Construct voronoi")
         pv.Construct()
-        cells = pv.GetCells()
-        edges = pv.GetEdges()
-        vertices = pv.GetVertices()
+        # cells = pv.GetCells()
+        # edges = pv.GetEdges()
+        # vertices = pv.GetVertices()
 
         ##################################################################################
         #CREATE THE OUTPUT FEATURE CLASSES
@@ -304,7 +319,7 @@ def main():
             arcpy.AddField_management(outpoints, 'IDENTIFIER', "LONG")		
             fields = ['IDENTIFIER', 'SHAPE@X', 'SHAPE@Y']
             with arcpy.da.InsertCursor(outpoints, fields) as cursor:
-                for vIndex, v in enumerate(vertices):
+                for vIndex, v in pv.EnumerateVertices():
                     cursor.insertRow([vIndex, v.X, v.Y])
 
         arcpy.AddMessage("Construct output cells feature class")
@@ -319,16 +334,16 @@ def main():
             arcpy.AddField_management(outpolygons, 'INPUT_ID', "LONG")
             fields = ['CELL_ID', 'CONTAINS_POINT', 'CONTAINS_SEGMENT', 'SHAPE@', 'SITE', 'SOURCE_CATEGORY', 'INPUT_TYPE', 'INPUT_ID']
             with arcpy.da.InsertCursor(outpolygons, fields) as cursor:
-                for cIndex, cell in enumerate(cells):
+                for cIndex, cell in pv.EnumerateCells():
                     if not cell.is_open and not cell.is_degenerate:
                         if (cIndex % 5000 == 0 and cIndex > 0):
                             arcpy.AddMessage("Cell Index: {0}".format(cIndex))
 
                         array = arcpy.Array()
                         for i, value in enumerate(cell.edges):
-                            e = edges[value]
-                            startVertex = vertices[e.start]
-                            endVertex = vertices[e.end]
+                            e = pv.GetEdge(value)
+                            startVertex = pv.GetVertex(e.start)
+                            endVertex = pv.GetVertex(e.end)
                             max_distance  = Distance([startVertex.X, startVertex.Y], [endVertex.X, endVertex.Y]) / 10
 
                             if e.is_linear:
