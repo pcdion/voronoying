@@ -54,3 +54,6 @@ There are different strategies we have implemented to fix that issues for our us
  - Modify the database resolution. If you want to learn more about that, go to the [documentation](https://pro.arcgis.com/en/pro-app/latest/help/data/geodatabases/overview/the-properties-of-a-spatial-reference.htm). 
 
 
+### Test data for developers
+
+Some point and line data is available for ArcGIS Pro users who want to test or develop on that tool. To import that data, right click on any file geodatabase in ArcGIS Pro and select `Import --> XML Template`. Chose the option to import the data and the schema.
