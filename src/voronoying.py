@@ -141,28 +141,20 @@ def checkSelfOverlap(inputFC, outPath, outFCName, triggerFailure):
             arcpy.AddError("Overlapping segments found. See feature class {0}".format(outFCPath))
             sys.exit(-1)
 
-def main():
+def voronoying(inpoints: str, inlines: str, outWorkspace: str, outpoints: str = "VONOROYING_POINTS", outpolygons: str = "VONOROYING_LINES", inroads_identifier: str = "OBJECTID", factor: int = 1):
     try:
         ##################################################################################
         #READ PARAMETERS
         ##################################################################################
-        inpoints = arcpy.GetParameterAsText(0)
-        inlines = arcpy.GetParameterAsText(1)
-        outWorkspace = arcpy.GetParameterAsText(2)
-        outpoints = arcpy.GetParameterAsText(3)
-        outpolygons = arcpy.GetParameterAsText(4)
-        inroads_identifier = arcpy.GetParameterAsText(5)
-        factor = int(arcpy.GetParameterAsText(6))   #New Parameter for the multiplier
         arcpy.env.workspace = outWorkspace
 
         ##################################################################################
         #HARD CODED PARAMETERS
         ##################################################################################
         # if arcpy.env.scratchWorkspace is None:
+
         arcpy.env.scratchWorkspace = outWorkspace
 
-
-       
         inroads_split_name = "voronoying_lines_split"
         inroads_split_line_name = "voronoying_lines_split_lines"
         inroads_split = "{0}{1}{2}".format(arcpy.env.scratchWorkspace, os.path.sep, inroads_split_name)
@@ -187,7 +179,7 @@ def main():
         inlinesBBox = validateInputLineFeatureClass(inlines)
         extents.append(inlinesBBox)
         #Validate input point feature class if required.
-        inPointsBBox = validateInputPointFeatureClass(inpoints) if len(arcpy.GetParameterAsText(0)) > 0 else None
+        inPointsBBox = validateInputPointFeatureClass(inpoints) if inpoints is not None else None
 
         ##################################################################################
         #REMOVE FEATURE CLASSES
@@ -314,6 +306,7 @@ def main():
         #CREATE THE OUTPUT FEATURE CLASSES
         ##################################################################################
         arcpy.AddMessage("Construct output point feature class")
+
         if len(outpoints) > 0:
             arcpy.CreateFeatureclass_management(outWorkspace, outpoints, 'POINT', spatial_reference=spatial_reference)		
             arcpy.AddField_management(outpoints, 'IDENTIFIER', "LONG")		
@@ -390,4 +383,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) == 8: #REVIEW: allow some default values?
+        voronoying(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
+    else:
+        print('PYTHON ERRORS:\n Please provide required arguments')
