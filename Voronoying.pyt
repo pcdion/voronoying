@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import arcpy
 from src.voronoying import voronoying
+from src.topology import validate_topology
 
 class Toolbox(object):
     def __init__(self):
         self.label =  "Voronoying"
         self.alias  = "voronoying"
-        self.tools = [Voronoying]
+        self.tools = [Voronoying, Topology]
 
 class Voronoying(object):
     def __init__(self):
@@ -101,6 +102,72 @@ class Voronoying(object):
         factor      = parameters[6].valueAsText
 
         voronoying(inPoints, inLines, outData, outPoints, outPoly, lineIds, int(factor))
+
+    def postExecute(self, parameters):
+        return
+
+class Topology(object):
+    def __init__(self):
+        self.label       = "Validate Topology"
+        self.description = "Validate topology of input features intended for Voronoying tool."
+
+    def getParameterInfo(self):
+
+        in_points = arcpy.Parameter(
+            displayName="Input points",
+            name="in_points",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+
+        in_points.filter.list = ["POINT"]
+
+        in_lines = arcpy.Parameter(
+            displayName="Input lines",
+            name="in_lines",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+
+        in_lines.filter.list = ["POLYLINE"]
+
+        factor = arcpy.Parameter(
+            displayName="Factor",
+            name="factor",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input")
+
+        factor.filter.type = "ValueList"
+        factor.filter.list = [1, 10, 100, 1000, 10000]
+
+        out_gdb = arcpy.Parameter(
+            displayName="Output geodatabase",
+            name="out_gdb",
+            datatype = 'DEWorkspace',
+            parameterType="Required",
+            direction="Output")
+
+        parameters = [in_points, in_lines, factor, out_gdb]
+        return parameters
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+
+        inPoints    = parameters[0].valueAsText
+        inLines     = parameters[1].valueAsText
+        factor     = parameters[2].valueAsText
+        gdb     = parameters[3].valueAsText
+
+        validate_topology(inPoints, inLines, int(factor), gdb)
 
     def postExecute(self, parameters):
         return
